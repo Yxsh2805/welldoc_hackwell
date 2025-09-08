@@ -1,6 +1,7 @@
 {
   "name": "hackwell_hackathon",
   "version": "0.1.0",
+  "homepage": "https://github.com/2006rahulsinha/hackwell_hackathon",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",
