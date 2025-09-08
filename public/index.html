@@ -1,43 +1,772 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Risk Prediction Dashboard</title>
+    
+    <!-- Chart.js - Required for all charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <!-- Font Awesome - For icons (optional but recommended) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - For better typography (optional) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Basic CSS styles for the dashboard */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .dashboard-header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .dashboard-subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        
+        /* Tab Navigation */
+        .tabs {
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 4px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn--active {
+            background: #1FB8CD;
+            color: white;
+            box-shadow: 0 2px 4px rgba(31, 184, 205, 0.2);
+        }
+        
+        .tab-btn:hover:not(.tab-btn--active) {
+            background: #f1f5f9;
+            color: #334155;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content--active {
+            display: block;
+        }
+        
+        /* Filter Section */
+        .filters-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .filters-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            color: #64748b;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn--active,
+        .filter-btn:hover {
+            border-color: #1FB8CD;
+            color: #1FB8CD;
+            background: #f0fdff;
+        }
+        
+        .search-input {
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 300px;
+            transition: border-color 0.2s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #1FB8CD;
+        }
+        
+        /* Table Styles */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .patient-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .patient-table th {
+            background: #f8fafc;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .patient-table th:hover {
+            background: #f1f5f9;
+        }
+        
+        .patient-table td {
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .patient-table tr:hover {
+            background: #f8fafc;
+        }
+        
+        /* Risk Score Styles */
+        .risk-score {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .risk-score--low {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .risk-score--medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .risk-score--high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Key Factors */
+        .key-factors {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .factor-tag {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn--primary {
+            background: #1FB8CD;
+            color: white;
+        }
+        
+        .btn--primary:hover {
+            background: #0891b2;
+            transform: translateY(-1px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #f1f5f9;
+        }
+        
+        .page-info {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        .modal__overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal__content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .modal__header {
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal__title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .modal__close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .modal__close:hover {
+            background: #f1f5f9;
+            color: #334155;
+        }
+        
+        .modal__body {
+            padding: 24px;
+        }
+        
+        /* Patient Details */
+        .patient-overview {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 24px;
+            align-items: center;
+            margin-bottom: 32px;
+            padding: 24px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+        
+        .patient-info h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .patient-meta {
+            display: flex;
+            gap: 24px;
+            color: #64748b;
+        }
+        
+        .risk-score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .risk-score-circle--low {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .risk-score-circle--medium {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .risk-score-circle--high {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        /* Cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .card__title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+        
+        /* Vitals & Labs */
+        .vital-item,
+        .lab-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .vital-item:last-child,
+        .lab-item:last-child {
+            border-bottom: none;
+        }
+        
+        .vital-label,
+        .lab-label {
+            font-weight: 500;
+            color: #64748b;
+        }
+        
+        .vital-value,
+        .lab-value {
+            font-weight: 600;
+        }
+        
+        .vital-value--normal,
+        .lab-value--normal {
+            color: #059669;
+        }
+        
+        .vital-value--high,
+        .lab-value--high {
+            color: #dc2626;
+        }
+        
+        /* Actions & Alerts */
+        .action-item {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .action-item:last-child {
+            border-bottom: none;
+        }
+        
+        .action-icon {
+            background: #1FB8CD;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .action-text {
+            color: #374151;
+            line-height: 1.5;
+        }
+        
+        .alert-item {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .alert-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .alert-item--info {
+            background: #f0f9ff;
+            color: #0369a1;
+            border-left: 4px solid #0ea5e9;
+        }
+        
+        .alert-item--warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .alert-item--critical {
+            background: #fef2f2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+        
+        .alert-icon--warning {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .alert-icon--critical {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .alert-description {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            height: 300px;
+        }
+        
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .chart-canvas {
+            width: 100% !important;
+            height: calc(100% - 40px) !important;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 16px;
+            }
+            
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-input {
+                width: 100%;
+            }
+            
+            .patient-overview {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .patient-meta {
+                justify-content: center;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal__content {
+                margin: 20px;
+                max-height: calc(100vh - 40px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Clinical Risk Prediction Dashboard</h1>
+            <p class="dashboard-subtitle">Monitor patient risk scores and clinical indicators in real-time</p>
+        </div>
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-btn tab-btn--active" data-tab="cohort">
+                <i class="fas fa-users"></i> Patient Cohort
+            </button>
+            <button class="tab-btn" data-tab="analytics">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </button>
+        </div>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+        <!-- Cohort Tab Content -->
+        <div id="cohort-tab" class="tab-content tab-content--active">
+            <!-- Filters Section -->
+            <div class="filters-section">
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <button class="filter-btn filter-btn--active" data-filter="all">All Patients</button>
+                        <button class="filter-btn" data-filter="high">High Risk</button>
+                        <button class="filter-btn" data-filter="medium">Medium Risk</button>
+                        <button class="filter-btn" data-filter="low">Low Risk</button>
+                    </div>
+                    <input type="text" id="patient-search" class="search-input" placeholder="Search patients...">
+                </div>
+            </div>
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+            <!-- Patient Table -->
+            <div class="table-container">
+                <table class="patient-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name">Patient Name</th>
+                            <th class="sortable" data-sort="age">Age</th>
+                            <th class="sortable" data-sort="riskScore">Risk Score</th>
+                            <th>Key Factors</th>
+                            <th class="sortable" data-sort="lastUpdated">Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patient-table-body">
+                        <!-- Table rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button id="prev-page" class="btn btn--primary">Previous</button>
+                    <span class="page-info">
+                        Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                    </span>
+                    <button id="next-page" class="btn btn--primary">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab Content -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3 class="chart-title">Risk Distribution</h3>
+                    <canvas id="risk-distribution-chart" class="chart-canvas"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Average Risk by Age Group</h3>
+                    <canvas id="age-risk-chart" class="chart-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Detail Modal -->
+    <div id="patient-modal" class="modal hidden">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h2 id="modal-patient-name" class="modal__title">Patient Details</h2>
+                <button id="close-modal" class="modal__close">&times;</button>
+            </div>
+            <div class="modal__body">
+                <!-- Patient Overview -->
+                <div class="patient-overview">
+                    <div class="patient-info">
+                        <h3 id="patient-name-detail">Patient Name</h3>
+                        <div class="patient-meta">
+                            <span>Age: <span id="patient-age-detail">--</span></span>
+                            <span>Last Updated: <span id="patient-updated-detail">--</span></span>
+                        </div>
+                    </div>
+                    <div id="risk-score-circle" class="risk-score-circle">
+                        <span id="risk-score-value">--</span>
+                    </div>
+                </div>
+
+                <!-- Cards Grid -->
+                <div class="cards-grid">
+                    <!-- Vitals Card -->
+                    <div class="card">
+                        <h4 class="card__title">Vital Signs</h4>
+                        <div id="vitals-grid">
+                            <!-- Vitals will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Lab Results Card -->
+                    <div class="card">
+                        <h4 class="card__title">Lab Results</h4>
+                        <div id="labs-grid">
+                            <!-- Labs will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Recommended Actions Card -->
+                    <div class="card">
+                        <h4 class="card__title">Recommended Actions</h4>
+                        <div id="actions-list">
+                            <!-- Actions will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Alerts Card -->
+                    <div class="card">
+                        <h4 class="card__title">Active Alerts</h4>
+                        <div id="alerts-list">
+                            <!-- Alerts will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h4 class="chart-title">Risk Trend</h4>
+                        <canvas id="risk-trend-chart" class="chart-canvas"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4 class="chart-title">Feature Importance</h4>
+                        <canvas id="feature-importance-chart" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the JavaScript file -->
+    <script src="dashboard.js"></script>
+</body>
 </html>
